@@ -3,7 +3,7 @@ import bodyParser from "body-parser";
 
 const app = express();
 const port = 3000;
-const masterKey = "4VGP2DN-6EWM4SJ-N6FGRHV-Z3PR3TT";
+//api key for deleting all: const masterKey = "4VGP2DN-6EWM4SJ-N6FGRHV-Z3PR3TT"; 
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -23,22 +23,73 @@ app.get("/jokes/:id", (req,res)=>{
   //or  const foundJoke = jokes.find((joke) => joke.id === id);
 })
 
-//3. GET a jokes by filtering on the joke type
+
 app.get("/filter", (req,res)=>{
-  var type=req.query.type; //or parseInt(req.params.id) req.params not req.body
-  var filteredType= jokes.find((joke)=>joke.jokeType===type);
-  res.json(filteredType);
+  var type=req.query.type; 
+  var filteredType= jokes.find((joke)=>joke.jokeType===type); //an array
+  res.json(filteredType); //give response as json, use as js object
 })
 
-//4. POST a new joke
+app.post("/jokes",(req,res)=>{
+  const newJoke={
+    id:jokes.length+1,
+    jokeText:req.body.text,
+    jokeType:req.body.type,
+  } 
+  jokes.push(newJoke); //PUSHED TO THE ARRAY AS AN OBJECT
+  //jokes.slice(-1) slice from zero backwards. takes the very last item.
+  res.json(newJoke);
+})
 
-//5. PUT a joke
+app.put("/jokes/:id", (req,res)=>{
+  const id= req.params.id*1;
+  // const jokesIndex= jokes[id]; wrong
+  // jokes[id].jokeText=req.body.text; wrong
+  // jokes[id].jokeType=req.body.type; wrong
+  const replacementJoke={
+    id: id,
+    jokeText:req.body.text,
+    jokeType:req.body.type,
+  };
+  const searchIndex= jokes.findIndex((joke)=>joke.id===id);
+  jokes[searchIndex]=replacementJoke;
+  res.json(replacementJoke);
+});
 
-//6. PATCH a joke
 
-//7. DELETE Specific joke
+app.patch("/jokes/:id", (req,res)=>{
+  const id= req.params.id*1;
+  const existingJoke= jokes.find((joke)=>joke.id===id);
+  const replacementJoke={
+    id: id,
+    jokeText:req.body.text|| existingJoke.jokeText,
+    jokeType:req.body.type|| existingJoke.jokeType,
+  };
+  const searchIndex= jokes.findIndex((joke)=>joke.id===id);
+  jokes[searchIndex]=replacementJoke;
+  res.json(replacementJoke);
+});
 
-//8. DELETE All jokes
+app.delete("/jokes/:id",(req,res)=>{
+  const id= req.params.id*1;
+  const searchIndex= jokes.findIndex((joke)=>joke.id===id);
+  if(searchIndex!= -1){
+    jokes.splice(searchIndex,1);
+    res.sendStatus(200);
+  }else{
+    res.status(404).json({error:`Joke with id ${id} not found`})
+  }
+});
+
+app.delete("/all", (req,res)=>{
+  const userKey= req.query.key;
+  if(userKey===masterKey){
+  jokes.splice(0,jokes.length);
+  res.sendStatus(200);
+  }else{
+  res.status(401).json({error:`Unauthorized`});
+  }
+});
 
 app.listen(port, () => {
   console.log(`Successfully started server on port ${port}.`);
